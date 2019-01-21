@@ -1,0 +1,44 @@
+#You can use any name
+#You can create sections as much as you want
+global:
+  #servers: [Lobby, BedWars-1, BedWars-2, SkyWars-{1-10}]
+  servers: [global]
+  #a delay between messages
+  interval: 15
+  #shufle messages or no
+  random: true
+  #Placeholders - %player%, %server%
+  messages:
+    - "&a&lTest message &b1. %player%, %server%"
+    - "&e&lTest message &r2"
+    - "&b&lTest message &a3"
+    #You can use a json fromated text, but you can't use a ' symbol in text. Use a ' to encapsulate a json
+    #http://minecraft.tools/en/tellraw.php
+    # - 'json'
+    - '["",{"text":"J","color":"green","hoverEvent":{"action":"show_text","value":["",{"text":"H","color":"dark_aqua"},{"text":"O","color":"dark_red"},{"text":"V","color":"green"},{"text":"E","color":"gray"},{"text":"R","color":"dark_purple"}]}},{"text":"S","color":"dark_red","hoverEvent":{"action":"show_text","value":["",{"text":"H","color":"dark_aqua"},{"text":"O","color":"dark_red"},{"text":"V","color":"green"},{"text":"E","color":"gray"},{"text":"R","color":"dark_purple"}]}},{"text":"O","color":"gold","hoverEvent":{"action":"show_text","value":["",{"text":"H","color":"dark_aqua"},{"text":"O","color":"dark_red"},{"text":"V","color":"green"},{"text":"E","color":"gray"},{"text":"R","color":"dark_purple"}]}},{"text":"N","color":"dark_blue","hoverEvent":{"action":"show_text","value":["",{"text":"H","color":"dark_aqua"},{"text":"O","color":"dark_red"},{"text":"V","color":"green"},{"text":"E","color":"gray"},{"text":"R","color":"dark_purple"}]}},{"text":" ","hoverEvent":{"action":"show_text","value":["",{"text":"H","color":"dark_aqua"},{"text":"O","color":"dark_red"},{"text":"V","color":"green"},{"text":"E","color":"gray"},{"text":"R","color":"dark_purple"}]}},{"text":"T","color":"aqua","hoverEvent":{"action":"show_text","value":["",{"text":"H","color":"dark_aqua"},{"text":"O","color":"dark_red"},{"text":"V","color":"green"},{"text":"E","color":"gray"},{"text":"R","color":"dark_purple"}]}},{"text":"es","color":"gold","hoverEvent":{"action":"show_text","value":["",{"text":"H","color":"dark_aqua"},{"text":"O","color":"dark_red"},{"text":"V","color":"green"},{"text":"E","color":"gray"},{"text":"R","color":"dark_purple"}]}},{"text":"t","color":"aqua","hoverEvent":{"action":"show_text","value":["",{"text":"H","color":"dark_aqua"},{"text":"O","color":"dark_red"},{"text":"V","color":"green"},{"text":"E","color":"gray"},{"text":"R","color":"dark_purple"}]}}]'
+lobbies:
+  servers: 
+    - Lobby-1
+    - Lobby-2
+  interval: 15
+  random: false
+  messages:
+    - "&a&lLobby test message &b1"
+    - "&e&lLobby tessage &r2"
+    - "&b&lLobby tessage &a3"
+    - "&aMulti\n
+       &bLine\n
+       &eMessage"
+minigames:
+  servers: 
+    - bw-{1-20}
+    - sw-{1-20}
+  interval: 15
+  random: false
+  messages:
+    - "&aMulti &eservers &btest &cmessage"
+any-other-section:
+  servers: []
+  interval: 5
+  random: false
+  messages: []
