@@ -9,17 +9,15 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import net.kyori.text.Component;
+import net.kyori.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.text.serializer.legacy.LegacyComponentSerializer;
+import net.md_5.bungee.config.Configuration;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.kyori.text.Component;
-import net.kyori.text.serializer.ComponentSerializers;
-import net.md_5.bungee.config.Configuration;
 
 public class AutoMessage {
 
@@ -45,8 +43,16 @@ public class AutoMessage {
         parseServers(servers);
     }
 
+    public static AutoMessage fromConfiguration(Configuration configuration, ProxyServer server) {
+        return new AutoMessage(server,
+                configuration.getStringList("servers"),
+                configuration.getInt("interval", 0),
+                configuration.getBoolean("random", false),
+                configuration.getStringList("messages"));
+    }
+
     private void parseServers(List<String> servers) {
-        servers.stream().filter(server -> "global".equalsIgnoreCase(server)).findAny().ifPresent(s -> this.global = true);
+        servers.stream().filter("global"::equalsIgnoreCase).findAny().ifPresent(s -> this.global = true);
         if (!global) {
             servers.forEach(server -> {
                 Matcher matcher = RANGE_MATCH.matcher(server);
@@ -110,20 +116,12 @@ public class AutoMessage {
         }
     }
 
-    public static AutoMessage fromConfiguration(Configuration configuration, ProxyServer server) {
-        return new AutoMessage(server,
-                configuration.getStringList("servers"),
-                configuration.getInt("interval", 0),
-                configuration.getBoolean("random", false),
-                configuration.getStringList("messages"));
-    }
-
-    public static enum CheckResult {
+    public enum CheckResult {
         OK,
         NO_SERVERS,
         NO_MESSAGES,
         INTERVAL_NOT_SET,
-        ALREADY_RUNNING;
+        ALREADY_RUNNING
     }
 
     private static class MessageContainer {
@@ -139,7 +137,7 @@ public class AutoMessage {
             JsonElement parsed = null;
             try {
                 parsed = JSON_PARSER.parse(message);
-            } catch (JsonSyntaxException ex) {
+            } catch (JsonSyntaxException ignored) {
             }
             isJson = parsed != null && !parsed.isJsonPrimitive();
             preCreated = (message.contains("%player%") || message.contains("%server%")) ? null : create(message);
@@ -159,7 +157,7 @@ public class AutoMessage {
         }
 
         private Component create(String text) {
-            return isJson ? ComponentSerializers.JSON.deserialize(text) : ComponentSerializers.LEGACY.deserialize(text, '&');
+            return isJson ? GsonComponentSerializer.INSTANCE.deserialize(text) : LegacyComponentSerializer.INSTANCE.deserialize(text, '&');
         }
 
     }

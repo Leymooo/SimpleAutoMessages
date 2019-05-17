@@ -9,21 +9,20 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 import org.slf4j.Logger;
 
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
 
-@Plugin(id = "simpleautomessages", name = "SimpleAutoMessages", version = "1.0",
+@Plugin(id = "simpleautomessages", name = "SimpleAutoMessages", version = "1.1",
         description = "AutoMessages plugin for velocity",
         authors = "Leymooo")
 public class SimpleAutoMessages {
@@ -31,9 +30,9 @@ public class SimpleAutoMessages {
     private final ProxyServer server;
     private final Logger logger;
     private final Path dataDirectory;
+    private final List<AutoMessage> messages;
     private Configuration config;
     private ScheduledTask task;
-    private final List<AutoMessage> messages;
 
     @Inject
     public SimpleAutoMessages(ProxyServer server, Logger logger, @DataDirectory Path userConfigDirectory) {
