@@ -6,7 +6,7 @@
 
     <groupId>ru.leymooo</groupId>
     <artifactId>simpleautomessages</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
     <packaging>jar</packaging>
 
     <name>SimpleAutoMessages</name>
@@ -38,18 +38,6 @@
             <version>3.0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>net.md-5</groupId>
-            <artifactId>bungeecord-config</artifactId>
-            <version>1.14-SNAPSHOT</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
     <build>
@@ -67,19 +55,6 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <relocations>
-                                <relocation>
-                                    <pattern>net.md_5.bungee.config</pattern>
-                                    <shadedPattern>ru.leymooo.simpleautomessages.shade.net.md_5.bungee.config</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.yaml</pattern>
-                                    <shadedPattern>ru.leymooo.simpleautomessages.shade.org.yaml.snakeyaml</shadedPattern>
-                                    <includes>
-                                        <include>org.yaml.**</include>
-                                    </includes>
-                                </relocation>
-                            </relocations>
                         </configuration>
                     </execution>
                 </executions>

@@ -9,9 +9,8 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -22,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Plugin(id = "simpleautomessages", name = "SimpleAutoMessages", version = "1.1",
+@Plugin(id = "simpleautomessages", name = "SimpleAutoMessages", version = "1.2",
         description = "AutoMessages plugin for velocity",
         authors = "Leymooo")
 public class SimpleAutoMessages {
@@ -31,7 +30,7 @@ public class SimpleAutoMessages {
     private final Logger logger;
     private final Path dataDirectory;
     private final List<AutoMessage> messages;
-    private Configuration config;
+    private ConfigurationNode config;
     private ScheduledTask task;
 
     @Inject
@@ -81,23 +80,30 @@ public class SimpleAutoMessages {
             logger.info("Staring AutoMessages tasks");
             synchronized (messages) {
                 messages.clear();
-                for (String section : config.getKeys()) {
-                    AutoMessage am = AutoMessage.fromConfiguration(config.getSection(section), server);
-                    AutoMessage.CheckResult result = am.checkAndRun(server.getPluginManager().fromInstance(SimpleAutoMessages.this).get());
-                    switch (result) {
-                        case OK:
-                            logger.info("'{}' was started", section);
-                            messages.add(am);
-                            continue;
-                        case INTERVAL_NOT_SET:
-                            logger.warn("Interval for '{}' is not specified or <=0", section);
-                            break;
-                        case NO_MESSAGES:
-                            logger.warn("Messages for '{}' is not specified or empty", section);
-                            break;
-                        case NO_SERVERS:
-                            logger.warn("Servers for '{}' is not specified or empty", section);
-                            break;
+                for (ConfigurationNode node : config.getChildrenMap().values()) {
+                    String section = (String) node.getKey();
+                    try {
+                        AutoMessage am = AutoMessage.fromConfiguration(node, server);
+                        AutoMessage.CheckResult result = am.checkAndRun(
+                            server.getPluginManager().fromInstance(SimpleAutoMessages.this).get());
+                        switch (result) {
+                            case OK:
+                                logger.info("'{}' was started", section);
+                                messages.add(am);
+                                continue;
+                            case INTERVAL_NOT_SET:
+                                logger.warn("Interval for '{}' is not specified or <=0", section);
+                                break;
+                            case NO_MESSAGES:
+                                logger.warn("Messages for '{}' is not specified or empty", section);
+                                break;
+                            case NO_SERVERS:
+                                logger.warn("Servers for '{}' is not specified or empty", section);
+                                break;
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Failed to start '{}' {}", section, e);
+                        continue;
                     }
                     logger.warn("'{}' was not started", section);
                 }
@@ -107,6 +113,7 @@ public class SimpleAutoMessages {
     }
 
     private boolean loadConfig() {
+
         File config = new File(dataDirectory.toFile(), "config.yml");
         config.getParentFile().mkdir();
         try {
@@ -115,12 +122,13 @@ public class SimpleAutoMessages {
                     Files.copy(in, config.toPath());
                 }
             }
-            this.config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(config);
+            YAMLConfigurationLoader loader = YAMLConfigurationLoader.builder().setFile(config).setIndent(2).build();
+            this.config = loader.load();
+            return true;
         } catch (Exception ex) {
-            logger.error("Can not load or save config", ex);
-            return false;
+            logger.error("Could not load or save config", ex);
         }
-        return true;
+        return false;
     }
 
     public Logger getLogger() {
@@ -131,7 +139,7 @@ public class SimpleAutoMessages {
         return server;
     }
 
-    public Configuration getConfig() {
+    public ConfigurationNode getConfig() {
         return config;
     }
 

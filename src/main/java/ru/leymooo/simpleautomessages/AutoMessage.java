@@ -1,5 +1,6 @@
 package ru.leymooo.simpleautomessages;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -14,12 +15,13 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.md_5.bungee.config.Configuration;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 
 public class AutoMessage {
 
@@ -45,12 +47,12 @@ public class AutoMessage {
         parseServers(servers);
     }
 
-    public static AutoMessage fromConfiguration(Configuration configuration, ProxyServer server) {
+    public static AutoMessage fromConfiguration(ConfigurationNode configuration, ProxyServer server) throws ObjectMappingException {
         return new AutoMessage(server,
-                configuration.getStringList("servers"),
-                configuration.getInt("interval", 0),
-                configuration.getBoolean("random", false),
-                configuration.getStringList("messages"));
+                configuration.getNode("servers").getList(TypeToken.of(String.class)),
+                configuration.getNode("interval").getInt(0),
+                configuration.getNode("random").getBoolean(false),
+                configuration.getNode("messages").getList(TypeToken.of(String.class)));
     }
 
     private void parseServers(List<String> servers) {
@@ -128,6 +130,9 @@ public class AutoMessage {
 
     private static class MessageContainer {
 
+        private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacyAmpersand().toBuilder()
+            .extractUrls(Style.style().decoration(TextDecoration.UNDERLINED, true).build()).build();
+
         private final static JsonParser JSON_PARSER = new JsonParser();
 
         private final String message;
@@ -159,7 +164,7 @@ public class AutoMessage {
         }
 
         private Component create(String text) {
-            return isJson ? GsonComponentSerializer.gson().deserialize(text) : LegacyComponentSerializer.legacyAmpersand().toBuilder().extractUrls(Style.style().decoration(TextDecoration.UNDERLINED, true).build()).build().deserialize(text);
+            return isJson ? GsonComponentSerializer.gson().deserialize(text) : LEGACY_SERIALIZER.deserialize(text);
         }
 
     }
