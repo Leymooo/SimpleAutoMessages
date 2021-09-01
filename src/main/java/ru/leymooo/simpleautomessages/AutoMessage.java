@@ -9,9 +9,9 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
-import net.kyori.text.Component;
-import net.kyori.text.serializer.gson.GsonComponentSerializer;
-import net.kyori.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.config.Configuration;
 
 import java.util.*;
@@ -88,7 +88,7 @@ public class AutoMessage {
             MessageContainer message = messages.get(index);
             if (global) {
                 if (!message.hasPlaceholders()) {
-                    proxyServer.broadcast(message.getForPlayer(null));
+                    proxyServer.sendMessage(message.getForPlayer(null));
                 } else {
                     proxyServer.getAllPlayers().forEach(pl -> pl.sendMessage(message.getForPlayer(pl)));
                 }
@@ -157,7 +157,7 @@ public class AutoMessage {
         }
 
         private Component create(String text) {
-            return isJson ? GsonComponentSerializer.INSTANCE.deserialize(text) : LegacyComponentSerializer.INSTANCE.deserialize(text, '&');
+            return isJson ? GsonComponentSerializer.gson().deserialize(text) : LegacyComponentSerializer.legacyAmpersand().deserialize(text);
         }
 
     }
