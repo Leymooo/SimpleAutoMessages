@@ -10,6 +10,8 @@ import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.config.Configuration;
@@ -157,7 +159,7 @@ public class AutoMessage {
         }
 
         private Component create(String text) {
-            return isJson ? GsonComponentSerializer.gson().deserialize(text) : LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+            return isJson ? GsonComponentSerializer.gson().deserialize(text) : LegacyComponentSerializer.legacyAmpersand().toBuilder().extractUrls(Style.style().decoration(TextDecoration.UNDERLINED, true).build()).build().deserialize(text);
         }
 
     }
