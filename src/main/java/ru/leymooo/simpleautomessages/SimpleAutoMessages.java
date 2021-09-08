@@ -1,6 +1,7 @@
 package ru.leymooo.simpleautomessages;
 
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyReloadEvent;
@@ -9,6 +10,8 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
 import org.slf4j.Logger;
@@ -21,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Plugin(id = "simpleautomessages", name = "SimpleAutoMessages", version = "1.2",
+@Plugin(id = "simpleautomessages", name = "SimpleAutoMessages", version = "1.3",
         description = "AutoMessages plugin for velocity",
         authors = "Leymooo")
 public class SimpleAutoMessages {
@@ -43,76 +46,110 @@ public class SimpleAutoMessages {
 
     @Subscribe
     public void onProxyInitialize(ProxyInitializeEvent event) {
-        logger.info("Loading config");
-        if (!loadConfig() || config == null) {
-            logger.error("Config is not loaded. Plugin will be inactive");
-            return;
-        }
-        logger.info("Config loaded");
-        logger.info("Plugin will be enabled after 3 seconds");
-        createAutoMessages();
+        enable(false, true);
+        getProxyServer().getCommandManager().register("simpleautomessages", new SimpleCommand() {
+            @Override
+            public void execute(Invocation invocation) {
+                if (invocation.arguments().length == 0 || !invocation.arguments()[0].equalsIgnoreCase("reload")) {
+                    invocation.source().sendMessage(Component.text("Commands: ").append(Component.newline()).append(Component.text("/" + invocation.alias() + " reload")));
+                    return;
+                }
+                if (enable(true, false)) {
+                    invocation.source().sendMessage(Component.text("AutoMessages successfully reloaded").color(NamedTextColor.GREEN));
+                } else {
+                    invocation.source().sendMessage(Component.text("Failed to reload AutoMessages. Check console for more info.").color(NamedTextColor.RED));
+                }
+            }
+            @Override
+            public boolean hasPermission(Invocation invocation) {
+                return invocation.source().hasPermission("simpleautomessages.reload");
+            }
+        }, "automessages", "am", "sam" );
     }
 
     @Subscribe
     public void onProxyReload(ProxyReloadEvent event) {
-        logger.info("Reloading");
-        if (!loadConfig() || config == null) {
-            logger.error("Can not reload config");
-            return;
-        }
-        messages.forEach(AutoMessage::stopScheduler);
-        logger.info("Plugin will be reloaded after 3 seconds");
-        if (task != null) {
-            task.cancel();
-        }
-        createAutoMessages();
+        enable(true, true);
     }
 
     @Subscribe
     public void onShutDown(ProxyShutdownEvent ev) {
         logger.info("Disabling SimpleAutoMessages");
-        messages.forEach(AutoMessage::stopScheduler);
+        disable();
         logger.info("SimpleAutoMessages disabled");
     }
 
-    private void createAutoMessages() {
-        this.task = server.getScheduler().buildTask(this, () -> {
-            logger.info("Staring AutoMessages tasks");
-            synchronized (messages) {
-                messages.clear();
-                for (ConfigurationNode node : config.getChildrenMap().values()) {
-                    String section = (String) node.getKey();
-                    try {
-                        AutoMessage am = AutoMessage.fromConfiguration(node, server);
-                        AutoMessage.CheckResult result = am.checkAndRun(
-                            server.getPluginManager().fromInstance(SimpleAutoMessages.this).get());
-                        switch (result) {
-                            case OK:
-                                logger.info("'{}' was started", section);
-                                messages.add(am);
-                                continue;
-                            case INTERVAL_NOT_SET:
-                                logger.warn("Interval for '{}' is not specified or <=0", section);
-                                break;
-                            case NO_MESSAGES:
-                                logger.warn("Messages for '{}' is not specified or empty", section);
-                                break;
-                            case NO_SERVERS:
-                                logger.warn("Servers for '{}' is not specified or empty", section);
-                                break;
-                        }
-                    } catch (Exception e) {
-                        logger.warn("Failed to start '{}' {}", section, e);
-                        continue;
-                    }
-                    logger.warn("'{}' was not started", section);
-                }
-                logger.info("Done");
-            }
-        }).delay(3, TimeUnit.SECONDS).schedule();
+    private boolean enable(boolean reload, boolean delay) {
+        logger.info(reload ? "Reloading config..." : "Loading config...");
+        ConfigurationNode node = loadConfig();
+        if (node == null) {
+            logger.error(reload ? "Failed to reload config" : "Failed to load config");
+            return false;
+        }
+        logger.info("Config successfully loaded");
+        this.config = node;
+        if (reload) {
+            disable();
+        }
+        if (delay) {
+            logger.info("AutoMessages enabling will be delayed for 3 sec.");
+        }
+        createAutoMessages(delay);
+        logger.info(reload ? "AutoMessages reloaded" : "AutoMessages loaded");
+        return true;
     }
 
-    private boolean loadConfig() {
+    private void disable() {
+        if (task != null) {
+            task.cancel();
+        }
+        messages.forEach(AutoMessage::stopScheduler);
+    }
+
+
+    private void createAutoMessages(boolean delay) {
+        Runnable enable = () -> {
+            logger.info("Staring AutoMessages tasks");
+            messages.clear();
+            for (ConfigurationNode node : config.getChildrenMap().values()) {
+                String section = (String) node.getKey();
+                try {
+                    AutoMessage am = AutoMessage.fromConfiguration(node, server);
+                    AutoMessage.CheckResult result = am.checkAndRun(
+                            server.getPluginManager().fromInstance(SimpleAutoMessages.this).get());
+                    switch (result) {
+                        case OK:
+                            logger.info("'{}' was started", section);
+                            messages.add(am);
+                            continue;
+                        case INTERVAL_NOT_SET:
+                            logger.warn("Interval for '{}' is not specified or <=0", section);
+                            break;
+                        case NO_MESSAGES:
+                            logger.warn("Messages for '{}' are not specified or empty", section);
+                            break;
+                        case NO_SERVERS:
+                            logger.warn("Servers for '{}' are not specified or empty", section);
+                            break;
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to start '{}' {}", section, e);
+                    continue;
+                }
+                logger.warn("'{}' was not started", section);
+            }
+            this.task = null;
+            logger.info("Done");
+        };
+        if (delay) {
+            this.task = server.getScheduler().buildTask(this, enable).delay(3, TimeUnit.SECONDS).schedule();
+        } else {
+            enable.run();
+        }
+
+    }
+
+    private ConfigurationNode loadConfig() {
 
         File config = new File(dataDirectory.toFile(), "config.yml");
         config.getParentFile().mkdir();
@@ -123,12 +160,11 @@ public class SimpleAutoMessages {
                 }
             }
             YAMLConfigurationLoader loader = YAMLConfigurationLoader.builder().setFile(config).setIndent(2).build();
-            this.config = loader.load();
-            return true;
+            return loader.load();
         } catch (Exception ex) {
             logger.error("Could not load or save config", ex);
         }
-        return false;
+        return null;
     }
 
     public Logger getLogger() {
